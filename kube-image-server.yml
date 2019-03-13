@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-server-deploy
+  labels:
+    app: image-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: image-server
+      environment: dev
+  template:
+    metadata:
+      labels:
+        app: image-server
+        environment: dev
+    spec:
+      imagePullSecrets:
+        - name: ocirsecret
+      containers:
+        - name: imgserv
+          image: iad.ocir.io/osclad007/bancochile/image-server:0.0.1-SNAPSHOT
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "256m"
+              cpu: "200m"
+            limits:
+              memory: "1G"
+              cpu: "1"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: img-service
+  labels:
+    app: image-server
+  annotations:
+    service.beta.kubernetes.io/oci-load-balancer-shape: 100Mbps
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: image-server
